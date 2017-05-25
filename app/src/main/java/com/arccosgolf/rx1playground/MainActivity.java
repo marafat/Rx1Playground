@@ -16,6 +16,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
     private Subscription onNextOnlySubscription;
     private Subscription regSubscription;
+    private Subscription secondSubscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,13 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void call(String s) {
                 Log.d(TAG, "call() of onNext only called with: s = [" + s + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+            }
+        });
+
+        secondSubscription = getMySecondStringObservable().subscribe(new Action1<String>() {
+            @Override
+            public void call(String s) {
+                Log.d(TAG, "call() called with: s = [" + s + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
             }
         });
     }
@@ -94,5 +102,35 @@ public class MainActivity extends AppCompatActivity {
                     }
                 })
                 .observeOn(AndroidSchedulers.mainThread());
+    }
+
+    /**
+     * This observable is to investigate what the example at: https://github.com/ReactiveX/RxAndroid/tree/1.x#observing-on-the-main-thread
+     * <p>
+     * So far, it seems like the example is misleading as far as the use of subscribeOn() and observeOn()
+     * I personally thought that if both are called in the way used in the example then any code inside
+     * the just() will run on the background thread, however, getMySecondStringObservable proves this
+     * theory wrong, as buildSecondString is still called on the main thread.
+     * <p>
+     * And calling subscribeOn() and observeOn() in succession, like the example at the link above, is pointless.
+     *
+     * @return
+     */
+    Observable<String> getMySecondStringObservable() {
+        return Observable.just(buildSecondString())
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .map(new Func1<String, String>() {
+                    @Override
+                    public String call(String s) {
+                        Log.d(TAG, "call: Adding signature to second string on thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+                        return "محمد" + s;
+                    }
+                });
+    }
+
+    private String buildSecondString() {
+        Log.d(TAG, "buildSecondString() called on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+        return "مرحبا!";
     }
 }
