@@ -29,4 +29,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
 
     compile 'io.reactivex:rxjava:1.3.0'
+
+    // RxLint: bitbucket.org/littlerobots/rxlint
+    compile 'nl.littlerobots.rxlint:rxlint:1.2'
 }
