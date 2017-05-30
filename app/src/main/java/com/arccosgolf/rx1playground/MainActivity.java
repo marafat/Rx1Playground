@@ -5,18 +5,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
 import rx.Observable;
-import rx.Subscriber;
 import rx.Subscription;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
+import rx.functions.Func0;
 import rx.functions.Func1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private Subscription onNextOnlySubscription;
     private Subscription regSubscription;
-    private Subscription secondSubscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,36 +27,62 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
 
-        regSubscription = getMyStringObservable().subscribe(new Subscriber<String>() {
-            @Override
-            public void onCompleted() {
-                Log.d(TAG, "onCompleted() called on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
-            }
+//        regSubscription = getMyStringObservable().subscribe(new Subscriber<String>() {
+//            @Override
+//            public void onCompleted() {
+//                Log.d(TAG, "onCompleted() called on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+//            }
+//
+//            @Override
+//            public void onError(Throwable e) {
+//                Log.d(TAG, "onError() called with: e = [" + e + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+//            }
+//
+//            @Override
+//            public void onNext(String s) {
+//                Log.d(TAG, "onNext() called with: s = [" + s + "] on Thread " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+//            }
+//        });
 
-            @Override
-            public void onError(Throwable e) {
-                Log.d(TAG, "onError() called with: e = [" + e + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
-            }
+//        regSubscription = getMyStringObservable().subscribe(new Action1<String>() {
+//            @Override
+//            public void call(String s) {
+//                Log.d(TAG, "call() of onNext only called with: s = [" + s + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+//            }
+//        });
 
-            @Override
-            public void onNext(String s) {
-                Log.d(TAG, "onNext() called with: s = [" + s + "] on Thread " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
-            }
-        });
+        //region Second String
+        /***********************************************/
+        // Second String
+        /***********************************************/
 
-        onNextOnlySubscription = getMyStringObservable().subscribe(new Action1<String>() {
-            @Override
-            public void call(String s) {
-                Log.d(TAG, "call() of onNext only called with: s = [" + s + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
-            }
-        });
-
-        secondSubscription = getMySecondStringObservable().subscribe(new Action1<String>() {
+        regSubscription = getMySecondStringObservable()
+                .subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<String>() {
             @Override
             public void call(String s) {
                 Log.d(TAG, "call() called with: s = [" + s + "] on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
             }
         });
+
+        //endregion
+
+        //region Defer
+        /***********************************************/
+        // Defer
+        /***********************************************/
+//        regSubscription = getMyStringObservableDeferred()
+//                .subscribeOn(Schedulers.newThread())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .subscribe(new Action1<String>() {
+//                    @Override
+//                    public void call(String s) {
+//                        Log.d(TAG, "call() called with: s = [" + s + "]" + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+//                    }
+//                });
+        //endregion
+
     }
 
     @Override
@@ -75,20 +99,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG, "onStop: Unsubscribing regSubs");
             regSubscription.unsubscribe();
         }
-
-
-        if (onNextOnlySubscription == null) {
-            Log.d(TAG, "onStop: onNextOnlySubs is Null");
-        }
-
-        if (onNextOnlySubscription != null && onNextOnlySubscription.isUnsubscribed()) {
-            Log.d(TAG, "onStop: onNextOnlySubs is unsubscribed");
-        }
-        if (onNextOnlySubscription != null && !onNextOnlySubscription.isUnsubscribed()) {
-            Log.d(TAG, "onStop: Unsubscribing onNextOnlySubs");
-            onNextOnlySubscription.unsubscribe();
-        }
-
     }
 
     Observable<String> getMyStringObservable() {
@@ -118,8 +128,6 @@ public class MainActivity extends AppCompatActivity {
      */
     Observable<String> getMySecondStringObservable() {
         return Observable.just(buildSecondString())
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
                 .map(new Func1<String, String>() {
                     @Override
                     public String call(String s) {
@@ -132,5 +140,17 @@ public class MainActivity extends AppCompatActivity {
     private String buildSecondString() {
         Log.d(TAG, "buildSecondString() called on Thread: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
         return "مرحبا!";
+    }
+
+
+    Observable<String> getMyStringObservableDeferred() {
+        Log.d(TAG, "getMyStringObservableDeferred: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+        return Observable.defer(new Func0<Observable<String>>() {
+            @Override
+            public Observable<String> call() {
+                Log.d(TAG, "call: inside defer call: " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+                return Observable.just("Hello Deferred");
+            }
+        });
     }
 }
