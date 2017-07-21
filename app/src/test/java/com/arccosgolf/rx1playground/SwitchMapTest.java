@@ -48,7 +48,9 @@ public class SwitchMapTest {
      */
     @Test
     public void flatMap() throws Exception {
+        System.out.println("Testing flatMap:...");
         final List<String> items = Lists.newArrayList("a", "b", "c", "d", "e", "f");
+        System.out.println("Input stream: " + items);
 
         final TestScheduler scheduler = new TestScheduler();
 
@@ -59,6 +61,7 @@ public class SwitchMapTest {
                             .delay(delay, TimeUnit.SECONDS, scheduler);
                 })
                 .toList()
+                .doOnSubscribe(() -> System.out.println("Output stream from flatMap:"))
                 .doOnNext(System.out::println)
                 .subscribe();
 
@@ -85,7 +88,9 @@ public class SwitchMapTest {
      */
     @Test
     public void switchMap() throws Exception {
+        System.out.println("Testing correct implementation of switchMap:...");
         final List<String> items = Lists.newArrayList("a", "b", "c", "d", "e", "f");
+        System.out.println("Input stream: " + items);
 
         final TestScheduler scheduler = new TestScheduler();
 
@@ -96,6 +101,37 @@ public class SwitchMapTest {
                             .delay(delay, TimeUnit.SECONDS, scheduler);
                 })
                 .toList()
+                .doOnSubscribe(() -> System.out.println("Output stream from correct implementation of switchMap:"))
+                .doOnNext(System.out::println)
+                .subscribe();
+
+        compositeSubscription.add(subscription);
+
+        /*
+         * advancing in time by 1 minute, just to be sure that everything will have the time
+         * to emit. (If we would not do this, the test would end before any emission).
+         */
+        scheduler.advanceTimeBy(1, TimeUnit.MINUTES);
+    }
+
+
+    @Test
+    public void badSwitchMap() throws Exception {
+        System.out.println("Testing bad implementation of switchMap:...");
+        final List<String> items = Lists.newArrayList("a", "b", "c", "d", "e", "f");
+        System.out.println("Input stream: " + items);
+
+        final TestScheduler scheduler = new TestScheduler();
+
+        final Subscription subscription = Observable.from(items)
+                .switchMap(Observable::just)
+                .flatMap(s -> {
+                    final int delay = new Random().nextInt(10);
+                    return Observable.just(s + "x")
+                            .delay(delay, TimeUnit.SECONDS, scheduler);
+                })
+                .toList()
+                .doOnSubscribe(() -> System.out.println("Output stream from bad implementation of switchMap:"))
                 .doOnNext(System.out::println)
                 .subscribe();
 
@@ -117,7 +153,9 @@ public class SwitchMapTest {
      */
     @Test
     public void concatMap() throws Exception {
+        System.out.println("Testing concatMap:...");
         final List<String> items = Lists.newArrayList("a", "b", "c", "d", "e", "f");
+        System.out.println("Input stream: " + items);
 
         final TestScheduler scheduler = new TestScheduler();
 
@@ -128,6 +166,7 @@ public class SwitchMapTest {
                             .delay(delay, TimeUnit.SECONDS, scheduler);
                 })
                 .toList()
+                .doOnSubscribe(() -> System.out.println("Output stream from concatMap:"))
                 .doOnNext(System.out::println)
                 .subscribe();
 
