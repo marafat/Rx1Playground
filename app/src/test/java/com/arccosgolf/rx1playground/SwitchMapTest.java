@@ -16,7 +16,7 @@ import rx.schedulers.TestScheduler;
 import rx.subscriptions.CompositeSubscription;
 
 /**
- * ${FILE_NAME}
+ * Credit goes to: http://bit.ly/2tx0564
  * author mhdarafat
  * on 7/21/17.
  */
