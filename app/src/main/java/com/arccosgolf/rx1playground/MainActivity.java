@@ -83,6 +83,37 @@ public class MainActivity extends AppCompatActivity {
 //                });
         //endregion
 
+        Observable.defer(new Func0<Observable<String>>() {
+            @Override
+            public Observable<String> call() {
+                return Observable.just(buildSecondString());
+            }
+        })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.computation())
+                .map(new Func1<String, String>() {
+                    @Override
+                    public String call(String s) {
+                        Log.w(TAG, "Mapping on computation thread " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+                        return s + " -mapped";
+                    }
+                })
+                .observeOn(Schedulers.io())
+                .map(new Func1<String, Integer>() {
+                    @Override
+                    public Integer call(String s) {
+                        Log.w(TAG, "Mapping on io to get int on thread " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+                        return s.length();
+                    }
+                })
+                .observeOn(AndroidSchedulers.mainThread())
+                .forEach(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer i) {
+                        Log.w(TAG, "Observing i = [" + i + "] on thread " + Thread.currentThread().getId() + "|" + Thread.currentThread().getName());
+                    }
+                });
+
     }
 
     @Override
